@@ -279,7 +279,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # テスト3: GitHub Token（ブロックされるべき）
 Write-Host "`n📝 Test 3: GitHub token (should block)" -ForegroundColor Yellow
-"GITHUB_TOKEN=ghp_123456789012345678901234567890123456" | Out-File test-github.txt
+"GITHUB_TOKEN=ghp_EXAMPLE_GITHUB_TOKEN_FOR_TEST_ONLY_XX" | Out-File test-github.txt
 git add test-github.txt
 git commit -m "Test github token"
 
@@ -323,11 +323,11 @@ Write-Host "`n✅ Pre-commit hook testing complete" -ForegroundColor Green
 
 $testCases = @(
     @{ Pattern = "Linear API"; Key = "lin_api_EXAMPLE_KEY_DO_NOT_USE_1234567890_ABCD"; ShouldBlock = $true },
-    @{ Pattern = "GitHub Token"; Key = "ghp_1234567890123456789012345678901234567890"; ShouldBlock = $true },
-    @{ Pattern = "Notion API"; Key = "secret_1234567890123456789012345678901234567890"; ShouldBlock = $true },
-    @{ Pattern = "Context7 API"; Key = "ctx7_12345678901234567890123456789012"; ShouldBlock = $true },
-    @{ Pattern = "OpenAI API"; Key = "sk-proj-1234567890123456789012345678901234567890123456789012"; ShouldBlock = $true },
-    @{ Pattern = "AWS Key"; Key = "AKIAIOSFODNN7EXAMPLE"; ShouldBlock = $true },
+    @{ Pattern = "GitHub Token"; Key = "ghp_EXAMPLE_GITHUB_TOKEN_DO_NOT_USE_1234567"; ShouldBlock = $true },
+    @{ Pattern = "Notion API"; Key = "secret_EXAMPLE_NOTION_KEY_DO_NOT_USE_1234567890"; ShouldBlock = $true },
+    @{ Pattern = "Context7 API"; Key = "ctx7_EXAMPLE_CONTEXT7_KEY_TEST_ONLY"; ShouldBlock = $true },
+    @{ Pattern = "OpenAI API"; Key = "sk-proj-EXAMPLE_OPENAI_KEY_FOR_TESTING_PURPOSES"; ShouldBlock = $true },
+    @{ Pattern = "AWS Key"; Key = "AKIAEXAMPLEKEYFORTESTONLY"; ShouldBlock = $true },
     @{ Pattern = "Normal Code"; Key = "const apiUrl = 'https://api.example.com';"; ShouldBlock = $false }
 )
 
