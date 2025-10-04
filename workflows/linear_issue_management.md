@@ -1,14 +1,33 @@
-# Linear Issue Automatic Management System (Windows版)
+# Linear Issue & Project Management System (Windows版)
 
-## 🔄 Linear Issue自動管理システム
+## 🔄 Linear プロジェクト & Issue統合管理システム
 
 ```powershell
-# Issue作業フロー (自動実行):
-1. Issue読み取り開始 → status: "In Progress"
-2. 作業実行・コード実装
-3. 作業完了 → 内容・コード記録 → status: "In Review"
+# 完全プロジェクトライフサイクル管理:
+1. プロジェクト開始 → 概要設定・マイルストーン作成・Issue作成
+2. Issue読み取り開始 → status: "In Progress"
+3. 作業実行・コード実装
+4. 作業完了 → 内容・コード記録 → status: "In Review"
+5. 問題発生時 → サポート要請文書自動生成
 → 許可不要の完全自動管理
 ```
+
+## 🚀 新機能: プロジェクト開始ワークフロー
+
+### プロジェクトマスターコマンド
+```powershell
+# zen recipeプロジェクトの例
+.\scripts\start-linear-project.ps1 `
+    -ProjectName "Zen Recipe" `
+    -ProjectId "f6048ad7-b261-4aa6-b735-b68406b9de4b" `
+    -Description "🧘 petit-recipeをネイティブAndroidに移行。Kotlin + MVVM + Room + Material Design 3でパフォーマンス向上とオフライン強化を実現。"
+```
+
+**自動実行内容**:
+1. プロジェクト概要更新
+2. 3つのマイルストーン作成（データレイヤー → UIレイヤー → 拡張機能）
+3. 初期Issue準備
+4. 設定確認レポート生成
 
 ---
 
@@ -317,9 +336,43 @@ $IN_REVIEW_ID = "33feb1c9-3276-4e13-863a-0b93db032a0f"
 
 ---
 
-**関連ドキュメント**:
+---
+
+## 🆘 問題発生時のサポート要請
+
+### サポート要請文書自動生成
+```powershell
+.\scripts\create-support-request.ps1 `
+    -ProjectName "Zen Recipe" `
+    -ProblemSummary "Room Database設定でエラーが発生" `
+    -ErrorMessage "Cannot find symbol: class RecipeDatabase" `
+    -TechStack "Kotlin, Room, MVVM" `
+    -Urgency "高"
+```
+
+**自動生成内容**:
+- 構造化された問題レポート
+- 技術的詳細テンプレート
+- 他のAIへの質問用フォーマット
+- クリップボード自動コピー
+
+---
+
+## 📚 関連ドキュメント
+
+### 新規ワークフロー
+- **workflows/linear-project-lifecycle-management.md**: 完全プロジェクト管理ワークフロー
+- **templates/linear-project-setup-template.md**: プロジェクトセットアップテンプレート
+- **scripts/start-linear-project.ps1**: プロジェクト開始マスターコマンド
+- **scripts/create-support-request.ps1**: サポート要請文書生成
+
+### 既存ドキュメント
 - workflows/powershell-automation.md: PowerShell自動化
 - scripts/sync-linear-status.ps1: 実装スクリプト
 - troubleshooting/linear-api-errors.md: API エラー対処
 
-**Linear連携Issue**: BOC-116
+### 実績プロジェクト
+- **zen recipe**: プロジェクト管理ワークフロー実証済み
+- **Linear Project**: https://linear.app/bochang-labo/project/zen-recipe-936f974b5deb
+
+**Linear連携Issue**: BOC-116, BOC-120, BOC-121
