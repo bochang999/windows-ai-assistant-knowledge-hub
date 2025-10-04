@@ -29,6 +29,7 @@ windows-ai-assistant-knowledge-hub/
 │
 ├── workflows/                  # ワークフローマニュアル
 │   ├── linear_issue_management.md
+│   ├── linear-project-lifecycle-management.md  # 📊 NEW: 完全プロジェクト管理
 │   ├── windows-mcp-integration.md
 │   ├── powershell-automation.md
 │   ├── android-build-automation.md
@@ -61,7 +62,16 @@ windows-ai-assistant-knowledge-hub/
 ├── scripts/                    # 自動化スクリプト
 │   ├── setup-windows-environment.ps1
 │   ├── validate-mcp-servers.ps1
-│   └── sync-linear-status.ps1
+│   ├── sync-linear-status.ps1
+│   │
+│   ├── # Linear Project Management
+│   ├── create-new-project.ps1      # 新規プロジェクト作成
+│   ├── list-projects.ps1           # プロジェクト一覧表示
+│   ├── get-project-simple.ps1      # プロジェクト詳細表示
+│   ├── start-linear-project.ps1    # 完全ワークフロー実行
+│   ├── create-project-milestones.ps1
+│   ├── update-project-description.ps1
+│   └── create-support-request.ps1
 │
 └── templates/                  # テンプレート
     ├── linear-issue-report.md
@@ -96,6 +106,21 @@ Start-Process powershell -ArgumentList "npx -y @n8n-mcp/server"
 ```powershell
 # MCP Servers検証
 .\scripts\validate-mcp-servers.ps1
+```
+
+### 4. Linearプロジェクト管理 🆕
+```powershell
+# 新規プロジェクト作成
+.\scripts\create-new-project.ps1 -ProjectName "My New Project" -Description "プロジェクト説明"
+
+# プロジェクト一覧表示
+.\scripts\list-projects.ps1
+
+# プロジェクト詳細表示
+.\scripts\get-project-simple.ps1 -ProjectId "project-id"
+
+# 完全ワークフロー実行（概要・マイルストーン・Issue作成）
+.\scripts\start-linear-project.ps1 -ProjectName "Project Name" -ProjectId "project-id" -Description "説明"
 ```
 
 詳細は **[SETUP.md](SETUP.md)** 参照。

@@ -552,6 +552,120 @@ Write-Host "✅ クリップボードにコピーしました" -ForegroundColor 
 
 ---
 
+## 📋 Phase 0: プロジェクト作成と閲覧
+
+### 0.1 新規プロジェクト作成
+
+**PowerShellスクリプト: create-new-project.ps1**
+```powershell
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$ProjectName,
+    
+    [Parameter(Mandatory=$true)]
+    [string]$Description,
+    
+    [string]$TeamId = "3dea9cba-30a5-4a25-b6e3-0ec0a2ec3896"
+)
+
+# Linear GraphQL APIを使用してプロジェクト作成
+$mutation = @"
+mutation CreateProject(`$teamIds: [String!]!, `$name: String!, `$description: String) {
+  projectCreate(input: {teamIds: `$teamIds, name: `$name, description: `$description}) {
+    success
+    project { id name description url }
+  }
+}
+"@
+
+# プロジェクト作成後、自動的に次ステップを提案
+Write-Host "🎯 Next steps:" -ForegroundColor Yellow
+Write-Host "   1. Setup project with full workflow:" -ForegroundColor White
+Write-Host "      .\scripts\start-linear-project.ps1 -ProjectName '$ProjectName' -ProjectId '$($project.id)' -Description '$Description'" -ForegroundColor Gray
+```
+
+**使用例**:
+```powershell
+# 新規プロジェクト作成
+.\scripts\create-new-project.ps1 -ProjectName "AI Chat Bot" -Description "OpenAI APIを使用したチャットボットアプリケーション"
+
+# 作成されたプロジェクトIDで完全ワークフロー実行
+.\scripts\start-linear-project.ps1 -ProjectName "AI Chat Bot" -ProjectId "returned-project-id" -Description "説明文"
+```
+
+### 0.2 プロジェクト一覧閲覧
+
+**PowerShellスクリプト: list-projects.ps1**
+```powershell
+param(
+    [string]$TeamId = "3dea9cba-30a5-4a25-b6e3-0ec0a2ec3896",
+    [int]$Limit = 20,
+    [switch]$ShowDetails
+)
+
+# チーム内の全プロジェクトを取得・表示
+$query = @"
+query GetProjects(`$teamId: String!, `$first: Int) {
+  team(id: `$teamId) {
+    name
+    projects(first: `$first) {
+      nodes {
+        id name description state progress url
+        projectMilestones { nodes { id name targetDate } }
+        issues { nodes { id identifier title state { name } } }
+      }
+    }
+  }
+}
+"@
+```
+
+**使用例**:
+```powershell
+# 基本一覧表示
+.\scripts\list-projects.ps1
+
+# 詳細情報付き表示
+.\scripts\list-projects.ps1 -ShowDetails
+
+# 最新10件のみ表示
+.\scripts\list-projects.ps1 -Limit 10
+```
+
+### 0.3 プロジェクト詳細閲覧
+
+**PowerShellスクリプト: get-project-simple.ps1**
+```powershell
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$ProjectId
+)
+
+# 特定プロジェクトの詳細情報を取得
+$query = @"
+query GetProject(`$projectId: String!) {
+  project(id: `$projectId) {
+    id name description state progress url
+    projectMilestones { nodes { id name targetDate } }
+    issues { nodes { id identifier title state { name } url } }
+  }
+}
+"@
+```
+
+**使用例**:
+```powershell
+# プロジェクト詳細表示
+.\scripts\get-project-simple.ps1 -ProjectId "f6048ad7-b261-4aa6-b735-b68406b9de4b"
+
+# パイプラインでの使用
+.\scripts\list-projects.ps1 | ForEach-Object { 
+    .\scripts\get-project-simple.ps1 -ProjectId $_.id 
+}
+```
+
+---
+
 ## 🔄 Phase 6: 完全ワークフロー実行
 
 ### 6.1 プロジェクト開始マスターコマンド
