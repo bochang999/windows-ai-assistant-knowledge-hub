@@ -83,7 +83,26 @@ windows-ai-assistant-knowledge-hub/
 
 ## 🚀 クイックスタート
 
-### 1. セットアップ
+### ⚡ 30秒で始める AI支援開発ワークフロー 🆕
+
+```powershell
+# 1. APIキー設定 (初回のみ)
+echo "lin_api_your_key" > $env:USERPROFILE\.linear-api-key
+echo "ghp_your_token" > $env:USERPROFILE\.github-token
+
+# 2. AI支援ワークフロー実行
+.\scripts\ai-assisted-workflow.ps1 -UserRequest "あなたの開発要求をここに入力"
+
+# 例: Reactアプリ作成
+.\scripts\ai-assisted-workflow.ps1 -UserRequest "天気予報APIを使用したReactアプリを作成"
+```
+
+### 🎯 新しい統合ワークフロー機能
+✅ **Sequential Thinking** → **Linear Issue** → **Serena実装** → **品質チェック** → **GitHub Push** → **完了報告**
+
+**📖 詳細ガイド**: **[AI-ASSISTED-WORKFLOW-QUICKSTART.md](AI-ASSISTED-WORKFLOW-QUICKSTART.md)**
+
+### 1. 従来のセットアップ
 ```powershell
 # リポジトリclone
 git clone https://github.com/bochang999/windows-ai-assistant-knowledge-hub.git
@@ -97,27 +116,24 @@ cd windows-ai-assistant-knowledge-hub
 ```powershell
 # Sequential Thinking MCP
 Start-Process powershell -ArgumentList "npx -y mcp-server-sequential-thinking"
-
-# n8n MCP
-Start-Process powershell -ArgumentList "npx -y @n8n-mcp/server"
 ```
 
 ### 3. 動作確認
 ```powershell
+# AI支援ワークフロー テスト
+.\scripts\test-ai-workflow.ps1
+
 # MCP Servers検証
 .\scripts\validate-mcp-servers.ps1
 ```
 
-### 4. Linearプロジェクト管理 🆕
+### 4. Linearプロジェクト管理
 ```powershell
 # 新規プロジェクト作成
 .\scripts\create-new-project.ps1 -ProjectName "My New Project" -Description "プロジェクト説明"
 
 # プロジェクト一覧表示
 .\scripts\list-projects.ps1
-
-# プロジェクト詳細表示
-.\scripts\get-project-simple.ps1 -ProjectId "project-id"
 
 # 完全ワークフロー実行（概要・マイルストーン・Issue作成）
 .\scripts\start-linear-project.ps1 -ProjectName "Project Name" -ProjectId "project-id" -Description "説明"

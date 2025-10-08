@@ -1,0 +1,234 @@
+#!/bin/sh
+# AI支援開発ワークフロー - Pre-commit Hook
+# APIキー漏洩防止 + 品質チェック統合
+
+echo "🔒 Pre-commit セキュリティ・品質チェック実行中..."
+
+# カラー出力関数
+print_error() {
+    echo "\033[31m❌ $1\033[0m"
+}
+
+print_warning() {
+    echo "\033[33m⚠️  $1\033[0m"
+}
+
+print_success() {
+    echo "\033[32m✅ $1\033[0m"
+}
+
+print_info() {
+    echo "\033[36mℹ️  $1\033[0m"
+}
+
+# エラーフラグ
+HAS_ERRORS=0
+
+# 1. APIキー漏洩チェック
+echo "\n🔍 Phase 1: APIキー漏洩チェック"
+
+# APIキーパターン定義
+API_KEY_PATTERNS=(
+    "sk-[a-zA-Z0-9]{48}"                # OpenAI API Key
+    "lin_api_[a-zA-Z0-9]+"              # Linear API Key
+    "ghp_[a-zA-Z0-9]{36}"               # GitHub Personal Access Token
+    "secret_[a-zA-Z0-9]{43}"            # Notion API Key
+    "ctx7_[a-zA-Z0-9]+"                 # Context7 API Key
+    "AKIA[0-9A-Z]{16}"                  # AWS Access Key
+    "[a-zA-Z0-9]{32}-[a-zA-Z0-9]{16}"   # Generic API Key Pattern
+)
+
+# ステージされたファイルを取得
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED_FILES" ]; then
+    print_info "コミット対象ファイルがありません"
+    exit 0
+fi
+
+# 各ファイルでAPIキーチェック
+for FILE in $STAGED_FILES; do
+    # バイナリファイルをスキップ
+    if file "$FILE" | grep -q "binary"; then
+        continue
+    fi
+    
+    # ファイルが存在するかチェック
+    if [ ! -f "$FILE" ]; then
+        continue
+    fi
+    
+    # 各パターンをチェック
+    for PATTERN in "${API_KEY_PATTERNS[@]}"; do
+        if grep -qE "$PATTERN" "$FILE"; then
+            print_error "APIキー漏洩検出: $FILE"
+            print_error "パターン: $PATTERN"
+            HAS_ERRORS=1
+        fi
+    done
+done
+
+if [ $HAS_ERRORS -eq 0 ]; then
+    print_success "APIキー漏洩チェック: 問題なし"
+else
+    print_error "APIキー漏洩が検出されました！"
+    print_info "対処方法:"
+    print_info "1. 該当ファイルからAPIキーを削除"
+    print_info "2. 環境変数またはローカルファイルに移動"
+    print_info "3. .gitignore に適切なパターンを追加"
+    exit 1
+fi
+
+# 2. 機密ファイルチェック
+echo "\n🔒 Phase 2: 機密ファイルチェック"
+
+# 機密ファイルパターン
+SENSITIVE_PATTERNS=(
+    "*.key"
+    "*.pem"
+    "*.p12"
+    "*.pfx"
+    "*password*"
+    "*secret*"
+    "*.env"
+    "*token*"
+    "*credential*"
+)
+
+SENSITIVE_FILES_FOUND=0
+
+for FILE in $STAGED_FILES; do
+    for PATTERN in "${SENSITIVE_PATTERNS[@]}"; do
+        case "$FILE" in
+            $PATTERN)
+                print_warning "機密ファイルの可能性: $FILE"
+                SENSITIVE_FILES_FOUND=1
+                ;;
+        esac
+    done
+done
+
+if [ $SENSITIVE_FILES_FOUND -eq 0 ]; then
+    print_success "機密ファイルチェック: 問題なし"
+else
+    print_warning "機密ファイルの可能性があるファイルが検出されました"
+    print_info "意図的な場合は続行してください"
+fi
+
+# 3. .gitignore チェック
+echo "\n📋 Phase 3: .gitignore 設定チェック"
+
+if [ -f ".gitignore" ]; then
+    REQUIRED_PATTERNS=(
+        ".env"
+        "*.key"
+        "*-token"
+        "*secret*"
+        "*.pem"
+    )
+    
+    MISSING_PATTERNS=()
+    
+    for PATTERN in "${REQUIRED_PATTERNS[@]}"; do
+        if ! grep -q "$PATTERN" ".gitignore"; then
+            MISSING_PATTERNS+=("$PATTERN")
+        fi
+    done
+    
+    if [ ${#MISSING_PATTERNS[@]} -eq 0 ]; then
+        print_success ".gitignore: セキュリティパターン完備"
+    else
+        print_warning ".gitignore に推奨パターンが不足:"
+        for PATTERN in "${MISSING_PATTERNS[@]}"; do
+            print_info "  - $PATTERN"
+        done
+    fi
+else
+    print_warning ".gitignore ファイルが存在しません"
+    print_info "セキュリティ向上のため .gitignore を作成することを推奨します"
+fi
+
+# 4. PowerShell スクリプト品質チェック（該当する場合）
+echo "\n🔍 Phase 4: PowerShell品質チェック"
+
+PS_FILES=$(echo "$STAGED_FILES" | grep "\.ps1$" || true)
+
+if [ ! -z "$PS_FILES" ]; then
+    print_info "PowerShellファイル検出: 基本チェック実行"
+    
+    for PS_FILE in $PS_FILES; do
+        # 基本的な構文チェック
+        if command -v pwsh > /dev/null 2>&1; then
+            if ! pwsh -NoProfile -Command "& { try { \$null = [System.Management.Automation.PSParser]::Tokenize((Get-Content '$PS_FILE' -Raw), [ref]\$null); Write-Host 'OK' } catch { Write-Host 'ERROR'; exit 1 } }" > /dev/null 2>&1; then
+                print_error "PowerShell構文エラー: $PS_FILE"
+                HAS_ERRORS=1
+            else
+                print_success "PowerShell構文チェック: $PS_FILE"
+            fi
+        else
+            print_info "PowerShell未インストール - 構文チェックをスキップ"
+        fi
+    done
+else
+    print_info "PowerShellファイルなし - チェックをスキップ"
+fi
+
+# 5. JavaScript/TypeScript品質チェック（該当する場合）
+echo "\n🔍 Phase 5: JavaScript/TypeScript品質チェック"
+
+JS_FILES=$(echo "$STAGED_FILES" | grep -E "\.(js|jsx|ts|tsx)$" || true)
+
+if [ ! -z "$JS_FILES" ]; then
+    print_info "JavaScript/TypeScriptファイル検出"
+    
+    # ESLint チェック
+    if command -v npx > /dev/null 2>&1 && [ -f "package.json" ]; then
+        if npx eslint --print-config . > /dev/null 2>&1; then
+            print_info "ESLint設定検出 - 品質チェック実行"
+            
+            # ステージされたファイルのみをチェック
+            echo "$JS_FILES" | while read -r FILE; do
+                if ! npx eslint "$FILE" > /dev/null 2>&1; then
+                    print_warning "ESLint警告/エラー: $FILE"
+                    print_info "詳細は 'npm run lint' で確認してください"
+                fi
+            done
+        else
+            print_info "ESLint設定なし - チェックをスキップ"
+        fi
+    else
+        print_info "Node.js/npm環境なし - ESLintチェックをスキップ"
+    fi
+else
+    print_info "JavaScript/TypeScriptファイルなし - チェックをスキップ"
+fi
+
+# 6. 大きなファイルチェック
+echo "\n📊 Phase 6: ファイルサイズチェック"
+
+LARGE_FILE_THRESHOLD=1048576  # 1MB
+
+for FILE in $STAGED_FILES; do
+    if [ -f "$FILE" ]; then
+        FILE_SIZE=$(stat -f%z "$FILE" 2>/dev/null || stat -c%s "$FILE" 2>/dev/null || echo 0)
+        if [ "$FILE_SIZE" -gt "$LARGE_FILE_THRESHOLD" ]; then
+            print_warning "大きなファイル: $FILE ($(echo "scale=2; $FILE_SIZE/1024/1024" | bc 2>/dev/null || echo "不明")MB)"
+            print_info "意図的でない場合は .gitignore への追加を検討してください"
+        fi
+    fi
+done
+
+print_success "ファイルサイズチェック完了"
+
+# 最終結果
+echo "\n🎯 Pre-commit チェック結果"
+
+if [ $HAS_ERRORS -eq 0 ]; then
+    print_success "すべてのセキュリティチェックに合格！"
+    print_info "コミットを続行します..."
+    exit 0
+else
+    print_error "セキュリティチェックに失敗しました"
+    print_error "上記の問題を修正してから再度コミットしてください"
+    exit 1
+fi
